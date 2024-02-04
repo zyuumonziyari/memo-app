@@ -3,6 +3,14 @@ hello
 ## memo-appの有益性
     シンプルなメモ機能が、あなたの意思決定を支える。
 
+## memo-appを立ち上げる
+ローカル環境で立ち上げ
+1. 任意のディレクトリに移動する
+2. ```git clone https://github.com/zyuumonziyari/memo-app```
+3. ```bundle install```
+4. ```bundle exec ruby memo_app.rb```
+5. " Listening on http://127.0.0.1:4567" にアクセス
+
 ## memo-appの使い方
 * memo-appにアクセス
     URLに以下アドレスを入力してトップページにアクセス
