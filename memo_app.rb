@@ -4,11 +4,30 @@ require 'sinatra'
 require 'sinatra/reloader'
 require 'cgi'
 require 'json'
+require 'securerandom'
 
 MEMOS_FILE = 'memos.json'
 
+not_found do
+  json(message: '404 Not Found.')
+end
+
+def load_memos
+  JSON.parse(File.read(MEMOS_FILE), symbolize_names: true)
+end
+
+def save_memos(indicated_data)
+  File.write(MEMOS_FILE, JSON.pretty_generate(indicated_data))
+end
+
+def find_memo(existing_data)
+  existing_data.find { |memo| memo[:id] == params[:id] }
+end
+
+existing_data = load_memos
+
 before do
-  @memos = load_memos
+  @memos = existing_data
 end
 
 get '/' do
@@ -20,53 +39,41 @@ get '/new' do
 end
 
 post '/create' do
-  title = CGI.escapeHTML(params[:title])
-  content = CGI.escapeHTML(params[:content])
-  memo = { id: assign_id, title:, content:, created_at: Time.now.to_s, updated_at: Time.now.to_s }
-  @memos << memo
-  save_memos
+  created_data = existing_data << { id: assign_id, title: params[:title], content: params[:content], created_at: Time.now.to_s, updated_at: Time.now.to_s }
+  save_memos(created_data)
   redirect '/'
 end
 
 get '/:id' do
-  @memo = @memos.find { |memo| memo[:id] == params[:id].to_i }
+  @memo = find_memo(existing_data)
   erb :show
 end
 
 get '/:id/edit' do
-  @memo = @memos.find { |memo| memo[:id] == params[:id].to_i }
+  @memo = find_memo(existing_data)
   erb :edit
 end
 
 patch '/:id/update' do
-  @memo = @memos.find { |memo| memo[:id] == params[:id].to_i }
-  @memo[:title] = CGI.escapeHTML(params[:title])
-  @memo[:content] = CGI.escapeHTML(params[:content])
-  @memo[:updated_at] = Time.now.to_s
-  save_memos
+  @memo = find_memo(existing_data)
+  @memo.merge!({ title: params[:title], content: params[:content], updated_at: Time.now.to_s })
+  updated_data = existing_data
+  save_memos(updated_data)
   redirect "/#{@memo[:id]}"
 end
 
 delete '/:id/destroy' do
-  @memos.reject! { |memo| memo[:id] == params[:id].to_i }
-  save_memos
+  destroyed_data = existing_data.reject! { |memo| memo[:id] == params[:id] }
+  save_memos(destroyed_data)
   redirect '/'
 end
 
-not_found do
-  json(message: '404 Not Found.')
-end
-
 helpers do
-  def load_memos
-    JSON.parse(File.read(MEMOS_FILE), symbolize_names: true)
-  end
-
-  def save_memos
-    File.write(MEMOS_FILE, JSON.pretty_generate(@memos))
+  def escape_html(text)
+    CGI.escapeHTML(text)
   end
 
   def assign_id
-    @memos.empty? ? 1 : @memos.last[:id] + 1
+    SecureRandom.uuid
   end
 end
