@@ -1,9 +1,9 @@
-<h1><%= @memo[:title] %></h1>
-<p><%= @memo[:content] %></p><br>
+<h1><%= escape_html(@memo[:title]) %></h1>
+<p><%= escape_html(@memo[:content]) %></p><br>
 <p>作成日時 : <%= @memo[:created_at] %></p>
 <p>更新日時 : <%= @memo[:updated_at] %></p>
 <a href="/<%= @memo[:id] %>/edit">編集</a>
 <form action="/<%= @memo[:id] %>/destroy" method="post">
-  <input type="hidden" name="_method" value="delete" style="display: none;">
+  <input type="hidden" name="_method" value="delete">
   <input type="submit" value="削除する">
 </form>
