@@ -3,12 +3,10 @@
 source 'https://rubygems.org'
 
 # gem "rails"
-gem 'puma'
-gem 'sinatra'
+gem 'erb_lint', require: false
 gem 'json'
+gem 'puma'
 gem 'rackup', '~> 2.1'
 gem 'redcarpet'
+gem 'sinatra'
 gem 'sinatra-contrib'
-group :development do
-    gem 'erb_lint', require: false
-end
