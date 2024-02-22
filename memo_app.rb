@@ -9,7 +9,7 @@ require 'securerandom'
 MEMOS_FILE = 'memos.json'
 
 not_found do
-  json(message: '404 Not Found.')
+  'ページが見つかりません!'
 end
 
 def load_memos
@@ -24,13 +24,12 @@ def find_memo(existing_data)
   existing_data.find { |memo| memo[:id] == params[:id] }
 end
 
-existing_data = load_memos
-
-before do
-  @memos = existing_data
+def assign_id
+  SecureRandom.uuid
 end
 
 get '/' do
+  @memos = load_memos
   erb :index
 end
 
@@ -39,30 +38,38 @@ get '/new' do
 end
 
 post '/create' do
-  created_data = existing_data << { id: assign_id, title: params[:title], content: params[:content], created_at: Time.now.to_s, updated_at: Time.now.to_s }
-  save_memos(created_data)
+  existing_data = load_memos
+  existing_data << { id: assign_id, title: params[:title], content: params[:content], created_at: Time.now, updated_at: Time.now }
+  save_memos(existing_data)
   redirect '/'
 end
 
 get '/:id' do
+  existing_data = load_memos
   @memo = find_memo(existing_data)
-  erb :show
+  if @memo.nil?
+    status 404
+  else
+    erb :show
+  end
 end
 
 get '/:id/edit' do
+  existing_data = load_memos
   @memo = find_memo(existing_data)
   erb :edit
 end
 
 patch '/:id/update' do
-  @memo = find_memo(existing_data)
-  @memo.merge!({ title: params[:title], content: params[:content], updated_at: Time.now.to_s })
-  updated_data = existing_data
-  save_memos(updated_data)
-  redirect "/#{@memo[:id]}"
+  existing_data = load_memos
+  original_data = find_memo(existing_data)
+  original_data.merge!(title: params[:title], content: params[:content], updated_at: Time.now)
+  save_memos(existing_data)
+  redirect "/#{original_data[:id]}"
 end
 
 delete '/:id/destroy' do
+  existing_data = load_memos
   destroyed_data = existing_data.reject! { |memo| memo[:id] == params[:id] }
   save_memos(destroyed_data)
   redirect '/'
@@ -71,9 +78,5 @@ end
 helpers do
   def escape_html(text)
     CGI.escapeHTML(text)
-  end
-
-  def assign_id
-    SecureRandom.uuid
   end
 end
