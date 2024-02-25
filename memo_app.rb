@@ -16,16 +16,32 @@ def load_memos
   JSON.parse(File.read(MEMOS_FILE), symbolize_names: true)
 end
 
+def add_memos(params)
+  existing_data = load_memos
+  existing_data << { id: SecureRandom.uuid, title: params[:title], content: params[:content], created_at: Time.now, updated_at: Time.now }
+  save_memos(existing_data)
+end
+
+def update_memos(params)
+  existing_data = load_memos
+  updating_data = existing_data.find { |memo| memo[:id] == params[:id] }
+  updating_data.merge!(title: params[:title], content: params[:content], updated_at: Time.now)
+  save_memos(existing_data)
+end
+
+def delete_memos(params)
+  existing_data = load_memos
+  destroyed_data = existing_data.reject! { |memo| memo[:id] == params[:id] }
+  save_memos(destroyed_data)
+end
+
 def save_memos(indicated_data)
   File.write(MEMOS_FILE, JSON.pretty_generate(indicated_data))
 end
 
-def find_memo(existing_data)
-  existing_data.find { |memo| memo[:id] == params[:id] }
-end
-
-def assign_id
-  SecureRandom.uuid
+def find_memo(params)
+  existing_data = load_memos
+  existing_data.find { |memo| memo[:id] == params }
 end
 
 get '/' do
@@ -38,15 +54,12 @@ get '/new' do
 end
 
 post '/create' do
-  existing_data = load_memos
-  existing_data << { id: assign_id, title: params[:title], content: params[:content], created_at: Time.now, updated_at: Time.now }
-  save_memos(existing_data)
+  add_memos(params)
   redirect '/'
 end
 
 get '/:id' do
-  existing_data = load_memos
-  @memo = find_memo(existing_data)
+  @memo = find_memo(params[:id])
   if @memo.nil?
     status 404
   else
@@ -55,23 +68,17 @@ get '/:id' do
 end
 
 get '/:id/edit' do
-  existing_data = load_memos
-  @memo = find_memo(existing_data)
+  @memo = find_memo(params[:id])
   erb :edit
 end
 
 patch '/:id/update' do
-  existing_data = load_memos
-  original_data = find_memo(existing_data)
-  original_data.merge!(title: params[:title], content: params[:content], updated_at: Time.now)
-  save_memos(existing_data)
-  redirect "/#{original_data[:id]}"
+  update_memos(params)
+  redirect "/#{params[:id]}"
 end
 
 delete '/:id/destroy' do
-  existing_data = load_memos
-  destroyed_data = existing_data.reject! { |memo| memo[:id] == params[:id] }
-  save_memos(destroyed_data)
+  delete_memos(params)
   redirect '/'
 end
 
