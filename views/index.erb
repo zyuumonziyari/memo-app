@@ -1,7 +1,7 @@
 <h2>メモ一覧</h2>
 <a href="/new">追加</a>
 <ul>
-  <% @memos.each do |memo| %>
-    <li><a href="/<%= memo[:id] %>"><%= escape_html(memo[:title]) %></a></li>
+  <% @memos.each do |id, memo| %>
+    <li><a href="/<%= id %>"><%= escape_html(memo[:title]) %></a></li>
   <% end %>
 </ul>

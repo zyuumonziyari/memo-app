@@ -1,5 +1,5 @@
 <h2>メモ編集</h2>
-<form action="/<%= @memo[:id] %>/update" method="post">
+<form action="/<%= params[:id] %>/update" method="post">
   <label for="title">タイトル:</label><br>
   <input type="text" id="title" name="title" value="<%= escape_html(@memo[:title]) %>"><br>
   <label for="content">内容:</label><br>
