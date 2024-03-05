@@ -12,43 +12,41 @@ not_found do
   'ページが見つかりません!'
 end
 
-def load_memo
+def load_memos
   JSON.parse(File.read(MEMOS_FILE), symbolize_names: true)
 end
 
 def add_memo(params)
-  existing_data = load_memo
-  existing_data[SecureRandom.uuid] = { title: params[:title], content: params[:content], created_at: Time.now, updated_at: Time.now }
-  save_memo(existing_data)
+  memos = load_memos
+  memos[SecureRandom.uuid] = { title: params[:title], content: params[:content], created_at: Time.now, updated_at: Time.now }
+  save_memo(memos)
 end
 
-def update_memo(params, memo, existing_data)
-  memo.merge!(title: params[:title], content: params[:content], updated_at: Time.now)
-  save_memo(existing_data)
+def update_memo(params)
+  memos = load_memos
+  memos[params[:id].to_sym][:title] = params[:title]
+  memos[params[:id].to_sym][:content] = params[:content]
+  memos[params[:id].to_sym][:updated_at] = Time.now
+  save_memo(memos)
 end
 
-def delete_memo(params)
-  existing_data = load_memo
-  existing_data.delete(params[:id].to_sym)
-  save_memo(existing_data)
+def delete_memo(id)
+  memos = load_memos
+  memos.delete(id.to_sym)
+  save_memo(memos)
 end
 
-def save_memo(existing_data)
-  File.write(MEMOS_FILE, JSON.pretty_generate(existing_data))
+def save_memo(memos)
+  File.write(MEMOS_FILE, JSON.pretty_generate(memos))
 end
 
 def find_memo(params)
-  existing_data = load_memo
-  memo = existing_data[params[:id].to_sym]
-  if memo && params[:title] || params[:content]
-    update_memo(params, memo, existing_data)
-  else
-    memo
-  end
+  memos = load_memos
+  memos[params[:id].to_sym]
 end
 
 get '/' do
-  @memos = load_memo
+  @memos = load_memos
   erb :index
 end
 
@@ -76,12 +74,12 @@ get '/:id/edit' do
 end
 
 patch '/:id/update' do
-  find_memo(params)
+  update_memo(params)
   redirect "/#{params[:id]}"
 end
 
 delete '/:id/destroy' do
-  delete_memo(params)
+  delete_memo(params[:id])
   redirect '/'
 end
 
