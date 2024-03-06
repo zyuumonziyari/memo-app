@@ -24,9 +24,7 @@ end
 
 def update_memo(params)
   memos = load_memos
-  memos[params[:id].to_sym][:title] = params[:title]
-  memos[params[:id].to_sym][:content] = params[:content]
-  memos[params[:id].to_sym][:updated_at] = Time.now
+  memos[params[:id].to_sym].merge!(title: params[:title], content: params[:content], updated_at: Time.now)
   save_memo(memos)
 end
 
@@ -40,7 +38,7 @@ def save_memo(memos)
   File.write(MEMOS_FILE, JSON.pretty_generate(memos))
 end
 
-def find_memo(params)
+def find_memo(id)
   memos = load_memos
   memos[params[:id].to_sym]
 end
@@ -70,17 +68,29 @@ end
 
 get '/:id/edit' do
   @memo = find_memo(params)
-  erb :edit
+  if @memo.nil?
+    status 404
+  else
+    erb :edit
+  end
 end
 
 patch '/:id/update' do
-  update_memo(params)
-  redirect "/#{params[:id]}"
+  if find_memo(params).nil?
+    status 404
+  else
+    update_memo(params)
+    redirect "/#{params[:id]}"
+  end
 end
 
 delete '/:id/destroy' do
+  if find_memo(params).nil?
+    status 404
+  else
   delete_memo(params[:id])
   redirect '/'
+  end
 end
 
 helpers do
