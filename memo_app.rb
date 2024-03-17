@@ -13,24 +13,24 @@ not_found do
 end
 
 def load_memos
-  JSON.parse(File.read(MEMOS_FILE), symbolize_names: true)
+  JSON.parse(File.read(MEMOS_FILE))
 end
 
 def add_memo(params)
   memos = load_memos
-  memos[SecureRandom.uuid] = { title: params[:title], content: params[:content], created_at: Time.now, updated_at: Time.now }
+  memos[SecureRandom.uuid] = { 'title' => params['title'], 'content' => params['content'], 'created_at' => Time.now, 'updated_at' => Time.now }
   save_memo(memos)
 end
 
 def update_memo(params)
   memos = load_memos
-  memos[params[:id].to_sym].merge!(title: params[:title], content: params[:content], updated_at: Time.now)
+  memos[params['id']].merge!('title' => params['title'], 'content' => params['content'], 'updated_at' => Time.now)
   save_memo(memos)
 end
 
 def delete_memo(id)
   memos = load_memos
-  memos.delete(id.to_sym)
+  memos.delete(id)
   save_memo(memos)
 end
 
@@ -40,7 +40,7 @@ end
 
 def find_memo(id)
   memos = load_memos
-  memos[id.to_sym]
+  memos[id]
 end
 
 get '/' do
@@ -58,7 +58,7 @@ post '/create' do
 end
 
 get '/:id' do
-  @memo = find_memo(params[:id])
+  @memo = find_memo(params['id'])
   if @memo.nil?
     status 404
   else
@@ -67,7 +67,7 @@ get '/:id' do
 end
 
 get '/:id/edit' do
-  @memo = find_memo(params[:id])
+  @memo = find_memo(params['id'])
   if @memo.nil?
     status 404
   else
@@ -76,19 +76,19 @@ get '/:id/edit' do
 end
 
 patch '/:id/update' do
-  if find_memo(params[:id]).nil?
+  if find_memo(params['id']).nil?
     status 404
   else
     update_memo(params)
-    redirect "/#{params[:id]}"
+    redirect "/#{params['id']}"
   end
 end
 
 delete '/:id/destroy' do
-  if find_memo(params[:id]).nil?
+  if find_memo(params['id']).nil?
     status 404
   else
-    delete_memo(params[:id])
+    delete_memo(params['id'])
     redirect '/'
   end
 end
