@@ -1,0 +1,7 @@
+memos.json
+.DS_Store
+.bundle/
+.erb-lint.yml
+.rubocop.yml
+public/
+vendor/
