@@ -1,7 +1,7 @@
-<h2><%= escape_html(@memo['title']) %></h2>
-<p><%= escape_html(@memo['content']) %></p><br>
-<p>作成日時 : <%= @memo['created_at'] %></p>
-<p>更新日時 : <%= @memo['updated_at'] %></p>
+<h2><%= escape_html(@title) %></h2>
+<p><%= escape_html(@content) %></p><br>
+<p>作成日時 : <%= @created_at %></p>
+<p>更新日時 : <%= @updated_at %></p>
 <a href="/<%= params['id'] %>/edit">編集</a>
 <form action="/<%= params['id'] %>/destroy" method="post">
   <input type="hidden" name="_method" value="delete">
