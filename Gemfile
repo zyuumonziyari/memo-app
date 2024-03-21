@@ -3,7 +3,7 @@
 source 'https://rubygems.org'
 
 gem 'erb_lint', require: false
-gem 'json'
+gem 'pg'
 gem 'puma'
 gem 'rackup', '~> 2.1'
 gem 'redcarpet'
