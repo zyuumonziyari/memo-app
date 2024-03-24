@@ -16,13 +16,15 @@ end
 configure do
   result = connect_db.exec("SELECT * FROM information_schema.tables WHERE table_name = 'memos'")
   if result.values.empty?
-    connect_db.exec('CREATE TABLE memos (
+    connect_db.exec(<<CREATE_TABLE_SQL)
+      CREATE TABLE memos (
         id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
         title VARCHAR(255) NOT NULL,
         content TEXT,
         created_at TIMESTAMP WITH TIME ZONE NOT NULL,
         updated_at TIMESTAMP WITH TIME ZONE NOT NULL
-      )')
+      );
+CREATE_TABLE_SQL
   end
 end
 
@@ -30,12 +32,13 @@ def load_memos
   connect_db.exec('SELECT * FROM memos ORDER BY updated_at DESC')
 end
 
-def add_memo(title, content)
-  connect_db.exec_params('INSERT INTO memos(title, content, created_at) VALUES ($1, $2, $3);', [title, content, DateTime.now])
+def add_memo(params)
+  connect_db.exec_params('INSERT INTO memos(title, content, created_at) VALUES ($1, $2, $3);', [params['title'], params['content'], Time.now])
 end
 
-def update_memo(title, content, id)
-  connect_db.exec_params('UPDATE memos SET title = $1, content = $2, updated_at = $3 WHERE id = $4;', [title, content, DateTime.now, id])
+def update_memo(params)
+  connect_db.exec_params('UPDATE memos SET title = $1, content = $2, updated_at = $3 WHERE id = $4;',
+                         [params['title'], params['content'], Time.now, params['id']])
 end
 
 def delete_memo(id)
@@ -57,22 +60,21 @@ get '/new' do
 end
 
 post '/create' do
-  title, content = params.values_at('title', 'content')
+  title = params['title']
   if title.empty?
     show_error_message
     erb :new
   else
-    add_memo(title, content)
+    add_memo(params)
     redirect '/'
   end
 end
 
 get '/:id' do
-  memo = search_memo(params['id'])
-  if memo.nil?
+  @memo = search_memo(params['id'])
+  if @memo.nil?
     status 404
   else
-    @title, @content, @created_at, @updated_at = memo[1..4]
     erb :show
   end
 end
@@ -96,7 +98,7 @@ patch '/:id/update' do
     show_error_message
     erb :edit
   else
-    update_memo(title, content, params['id'])
+    update_memo(params)
     redirect "/#{params['id']}"
   end
 end
@@ -115,8 +117,8 @@ helpers do
     CGI.escapeHTML(text)
   end
 
-  def set_form_value(text)
-    text.nil? ? '' : escape_html(text)
+  def determine_form_value(text)
+    text.nil? ? '' : escape_html(text.to_s)
   end
 
   def show_error_message
