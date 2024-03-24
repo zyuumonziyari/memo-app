@@ -1,9 +1,9 @@
 <h2>メモ編集</h2>
 <form action="/<%= params['id'] %>/update" method="post">
   <label for="title">タイトル:</label><br>
-  <input autocomplete="off" type="text" id="title" name="title" value="<%= set_form_value(@title) %>"><br>
+  <input autocomplete="off" type="text" id="title" name="title" value="<%= determine_form_value(@title) %>"><br>
   <label for="content">内容:</label><br>
-  <input autocomplete="off" type="text" id="content" name="content" value="<%= set_form_value(@content) %>"><br>
+  <input autocomplete="off" type="text" id="content" name="content" value="<%= determine_form_value(@content) %>"><br>
   <input type="hidden" name="_method" value="patch">
   <input type="submit" name="submit" value="変更する">
 </form>
