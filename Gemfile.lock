@@ -129,7 +129,6 @@ PLATFORMS
 
 DEPENDENCIES
   erb_lint
-  json
   pg
   puma
   rackup (~> 2.1)
