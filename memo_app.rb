@@ -16,7 +16,7 @@ end
 configure do
   result = connect_db.exec("SELECT * FROM information_schema.tables WHERE table_name = 'memos'")
   if result.values.empty?
-    connect_db.exec(<<CREATE_TABLE_SQL)
+    connect_db.exec(<<~SQL)
       CREATE TABLE memos (
         id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
         title VARCHAR(255) NOT NULL,
@@ -24,7 +24,7 @@ configure do
         created_at TIMESTAMP WITH TIME ZONE NOT NULL,
         updated_at TIMESTAMP WITH TIME ZONE NOT NULL
       );
-CREATE_TABLE_SQL
+    SQL
   end
 end
 
@@ -33,12 +33,17 @@ def load_memos
 end
 
 def add_memo(params)
-  connect_db.exec_params('INSERT INTO memos(title, content, created_at) VALUES ($1, $2, $3);', [params['title'], params['content'], Time.now])
+  connect_db.exec_params(
+    'INSERT INTO memos(title, content, created_at) VALUES ($1, $2, $3);',
+    [params['title'], params['content'], Time.now]
+  )
 end
 
 def update_memo(params)
-  connect_db.exec_params('UPDATE memos SET title = $1, content = $2, updated_at = $3 WHERE id = $4;',
-                         [params['title'], params['content'], Time.now, params['id']])
+  connect_db.exec_params(
+    'UPDATE memos SET title = $1, content = $2, updated_at = $3 WHERE id = $4;',
+    [params['title'], params['content'], Time.now, params['id']]
+  )
 end
 
 def delete_memo(id)
@@ -46,8 +51,7 @@ def delete_memo(id)
 end
 
 def search_memo(id)
-  search_result = connect_db.exec_params('SELECT * FROM memos WHERE id = $1;', [id])
-  search_result.tuple_values(0)
+  connect_db.exec_params('SELECT * FROM memos WHERE id = $1;', [id]).first
 end
 
 get '/' do
@@ -60,8 +64,7 @@ get '/new' do
 end
 
 post '/create' do
-  title = params['title']
-  if title.empty?
+  if params['title'].empty?
     show_error_message
     erb :new
   else
@@ -72,29 +75,19 @@ end
 
 get '/:id' do
   @memo = search_memo(params['id'])
-  if @memo.nil?
-    status 404
-  else
-    erb :show
-  end
+  status 404 if @memo.nil?
+  erb :show
 end
 
 get '/:id/edit' do
-  memo = search_memo(params['id'])
-  if memo.nil?
-    status 404
-  else
-    @title, @content = memo[1..2]
-    erb :edit
-  end
+  @memo = search_memo(params['id'])
+  status 404 if @memo.nil?
+  erb :edit
 end
 
 patch '/:id/update' do
-  title, content = params.values_at('title', 'content')
-  if search_memo(params['id']).nil?
-    status 404
-  elsif title.empty?
-    @content = content
+  status 404 if search_memo(params['id']).nil?
+  if params['title'].empty?
     show_error_message
     erb :edit
   else
@@ -104,21 +97,14 @@ patch '/:id/update' do
 end
 
 delete '/:id/destroy' do
-  if search_memo(params['id']).nil?
-    status 404
-  else
-    delete_memo(params['id'])
-    redirect '/'
-  end
+  status 404 if search_memo(params['id']).nil?
+  delete_memo(params['id'])
+  redirect '/'
 end
 
 helpers do
   def escape_html(text)
-    CGI.escapeHTML(text)
-  end
-
-  def determine_form_value(text)
-    text.nil? ? '' : escape_html(text.to_s)
+    CGI.escapeHTML(text.to_s)
   end
 
   def show_error_message
