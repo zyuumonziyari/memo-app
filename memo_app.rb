@@ -64,47 +64,57 @@ get '/new' do
 end
 
 post '/create' do
-  if params['title'].empty?
-    show_error_message
-    erb :new
-  else
+  if params['title'].size.positive?
     add_memo(params)
     redirect '/'
+  else
+    show_error_message
+    erb :new
   end
 end
 
 get '/:id' do
   @memo = search_memo(params['id'])
-  status 404 if @memo.nil?
-  erb :show
+  if @memo
+    erb :show
+  else
+    status 404
+  end
 end
 
 get '/:id/edit' do
   @memo = search_memo(params['id'])
-  status 404 if @memo.nil?
-  erb :edit
+  if @memo
+    erb :edit
+  else
+    status 404
+  end
 end
 
 patch '/:id/update' do
-  status 404 if search_memo(params['id']).nil?
-  if params['title'].empty?
+  if params['title'].size.positive?
+    update_memo(params)
+    redirect "/#{params['id']}"
+  elsif params['title'].empty?
     show_error_message
     erb :edit
   else
-    update_memo(params)
-    redirect "/#{params['id']}"
+    status 404
   end
 end
 
 delete '/:id/destroy' do
-  status 404 if search_memo(params['id']).nil?
-  delete_memo(params['id'])
-  redirect '/'
+  if search_memo(params['id'])
+    delete_memo(params['id'])
+    redirect '/'
+  else
+    status 404
+  end
 end
 
 helpers do
   def escape_html(text)
-    CGI.escapeHTML(text.to_s)
+    CGI.escapeHTML(text)
   end
 
   def show_error_message
