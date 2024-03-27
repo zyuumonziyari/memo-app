@@ -15,7 +15,7 @@
     1. 'memos'テーブルの作成する。
         ```postgres
         memo_app=# CREATE TABLE memos (
-        id UUID  DEFAULT gen_random_uuid() PRIMARY KEY,
+        id VARCHAR(36) DEFAULT gen_random_uuid() PRIMARY KEY,
         title VARCHAR(255) NOT NULL,
         content TEXT,
         created_at TIMESTAMP WITH TIME ZONE,
