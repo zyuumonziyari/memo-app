@@ -1,9 +1,9 @@
 <h2>メモ編集</h2>
 <form action="/<%= params['id'] %>/update" method="post">
   <label for="title">タイトル:</label><br>
-  <input type="text" id="title" name="title" value="<%= escape_html(@memo['title']) %>"><br>
+  <input autocomplete="off" type="text" id="title" name="title" value="<%= escape_html(params['title'] || @memo['title']) %>"><br>
   <label for="content">内容:</label><br>
-  <textarea id="content" name="content"><%= escape_html(@memo['content']) %></textarea><br>
+  <textarea id="content" name="content" cols="50" rows="5"><%= escape_html(params['content'] || @memo['content']) %></textarea><br>
   <input type="hidden" name="_method" value="patch">
   <input type="submit" name="submit" value="変更する">
 </form>

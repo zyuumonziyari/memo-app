@@ -3,44 +3,55 @@
 require 'sinatra'
 require 'sinatra/reloader'
 require 'cgi'
-require 'json'
-require 'securerandom'
-
-MEMOS_FILE = 'memos.json'
+require 'pg'
 
 not_found do
   'ページが見つかりません!'
 end
 
+def connect_db
+  @connect_db ||= PG.connect(dbname: 'memo_app')
+end
+
+configure do
+  result = connect_db.exec("SELECT * FROM information_schema.tables WHERE table_name = 'memos'")
+  if result.values.empty?
+    connect_db.exec(<<~SQL)
+      CREATE TABLE memos (
+        id VARCHAR(36) DEFAULT gen_random_uuid() PRIMARY KEY,
+        title VARCHAR(255) NOT NULL,
+        content TEXT,
+        created_at TIMESTAMP WITH TIME ZONE NOT NULL,
+        updated_at TIMESTAMP WITH TIME ZONE NOT NULL
+      );
+    SQL
+  end
+end
+
 def load_memos
-  JSON.parse(File.read(MEMOS_FILE))
+  connect_db.exec('SELECT * FROM memos ORDER BY updated_at DESC')
 end
 
 def add_memo(params)
-  memos = load_memos
-  memos[SecureRandom.uuid] = { 'title' => params['title'], 'content' => params['content'], 'created_at' => Time.now, 'updated_at' => Time.now }
-  save_memo(memos)
+  connect_db.exec_params(
+    'INSERT INTO memos(title, content, created_at) VALUES ($1, $2, $3);',
+    [params['title'], params['content'], Time.now]
+  )
 end
 
 def update_memo(params)
-  memos = load_memos
-  memos[params['id']].merge!('title' => params['title'], 'content' => params['content'], 'updated_at' => Time.now)
-  save_memo(memos)
+  connect_db.exec_params(
+    'UPDATE memos SET title = $1, content = $2, updated_at = $3 WHERE id = $4;',
+    [params['title'], params['content'], Time.now, params['id']]
+  )
 end
 
 def delete_memo(id)
-  memos = load_memos
-  memos.delete(id)
-  save_memo(memos)
+  connect_db.exec_params('DELETE FROM memos WHERE id = $1;', [id])
 end
 
-def save_memo(memos)
-  File.write(MEMOS_FILE, JSON.pretty_generate(memos))
-end
-
-def find_memo(id)
-  memos = load_memos
-  memos[id]
+def search_memo(id)
+  connect_db.exec_params('SELECT * FROM memos WHERE id = $1;', [id]).first
 end
 
 get '/' do
@@ -53,48 +64,60 @@ get '/new' do
 end
 
 post '/create' do
-  add_memo(params)
-  redirect '/'
+  if !params['title'].empty?
+    add_memo(params)
+    redirect '/'
+  else
+    show_error_message
+    erb :new
+  end
 end
 
 get '/:id' do
-  @memo = find_memo(params['id'])
-  if @memo.nil?
-    status 404
-  else
+  @memo = search_memo(params['id'])
+  if @memo
     erb :show
+  else
+    status 404
   end
 end
 
 get '/:id/edit' do
-  @memo = find_memo(params['id'])
-  if @memo.nil?
-    status 404
-  else
+  @memo = search_memo(params['id'])
+  if @memo
     erb :edit
+  else
+    status 404
   end
 end
 
 patch '/:id/update' do
-  if find_memo(params['id']).nil?
-    status 404
-  else
+  if !params['title'].empty?
     update_memo(params)
     redirect "/#{params['id']}"
+  elsif params['title'].empty?
+    show_error_message
+    erb :edit
+  else
+    status 404
   end
 end
 
 delete '/:id/destroy' do
-  if find_memo(params['id']).nil?
-    status 404
-  else
+  if search_memo(params['id'])
     delete_memo(params['id'])
     redirect '/'
+  else
+    status 404
   end
 end
 
 helpers do
   def escape_html(text)
     CGI.escapeHTML(text)
+  end
+
+  def show_error_message
+    @error_message = 'titleを入力してください'
   end
 end
