@@ -18,7 +18,7 @@ configure do
   if result.values.empty?
     connect_db.exec(<<~SQL)
       CREATE TABLE memos (
-        id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+        id VARCHAR(36) DEFAULT gen_random_uuid() PRIMARY KEY,
         title VARCHAR(255) NOT NULL,
         content TEXT,
         created_at TIMESTAMP WITH TIME ZONE NOT NULL,
@@ -64,7 +64,7 @@ get '/new' do
 end
 
 post '/create' do
-  if params['title'].size.positive?
+  if !params['title'].empty?
     add_memo(params)
     redirect '/'
   else
@@ -92,7 +92,7 @@ get '/:id/edit' do
 end
 
 patch '/:id/update' do
-  if params['title'].size.positive?
+  if !params['title'].empty?
     update_memo(params)
     redirect "/#{params['id']}"
   elsif params['title'].empty?
